@@ -19,6 +19,7 @@ Updates to the list will be made when the name of the created objects changes fr
 
 Postconditions
 results (obtained from “results.txt” must be equivalent to write_permission_list for the process to be considered correct
+
 if __name__ == '__main__':
     param = []
     if (N_SLAVES <= 0 or N_SLAVES >= 100):
@@ -43,32 +44,7 @@ Preconditions:
 N_SLAVES <100 → the number of slaves must never exceed 100.
 “To be taken into account” → the parameter TIME = 0.3 can alter the performance of the program and tiny times can be useless if no changes have occurred on the server.
 
-def master(x, ibm_cos):
-    write_permission_list = []
-    ibm_cos.put_object(Bucket=BUCKET, Key="results.txt", Body="")
-    while ibm_cos.list_objects_v2(Bucket=BUCKET, Prefix="p_write_")['KeyCount'] == 0:
-        time.sleep(x)
-    itemsList = sorted(ibm_cos.list_objects_v2(Bucket=BUCKET, Prefix="p_write_")['Contents'],
-                       key=lambda ultimo: ultimo['LastModified'])
-    while(itemsList != 0):
-        ident = itemsList[0]["Key"].split("_")
-        lastUpdate = ibm_cos.list_objects(
-            Bucket=BUCKET, Prefix="results.txt")['Contents'][0]['LastModified']
 
-        ibm_cos.put_object(Bucket=BUCKET, Key="write_" + str(ident[2]))
-        ibm_cos.delete_object(Bucket=BUCKET, Key=itemsList[0]["Key"])
-        write_permission_list.append(int(ident[2]))
-        while(lastUpdate == ibm_cos.list_objects_v2(Bucket=BUCKET, Prefix="results.txt")['Contents'][0]['LastModified']):
-            time.sleep(x)
-        ibm_cos.delete_object(Bucket=BUCKET, Key="write_" + str(ident[2]))
-        time.sleep(x)
-        if ibm_cos.list_objects_v2(Bucket=BUCKET, Prefix="p_write_")['KeyCount'] > 0:
-            itemsList = sorted(ibm_cos.list_objects_v2(Bucket=BUCKET, Prefix="p_write_")['Contents'],
-                               key=lambda ultimo: ultimo['LastModified'])
-        else:
-            itemsList = 0
-
-    return write_permission_list
   ----------------------------------------------------------------------------------------------------------------------------------
 
 SLAVE:
@@ -84,15 +60,7 @@ N_SLAVES <100 → the number of slaves must never exceed 100.
 “To be taken into account” → the parameter TIME = 0.3 can alter the performance of the program and tiny times can be useless if no changes have occurred on the server.
 Updates to the list will be made when the name of the created objects changes from "p_write" + "id" to "write_" + "id"
 
-def slave(id, x, ibm_cos):
-    ibm_cos.put_object(Bucket=BUCKET, Key="p_write_" + str(id))
-    while(ibm_cos.list_objects_v2(Bucket=BUCKET, Prefix="write_" + str(id))['KeyCount'] == 0):
-        time.sleep(x)
-    results = list(ibm_cos.get_object(
-        Bucket=BUCKET, Key="results.txt")['Body'])
-    results.append(id)
-    ibm_cos.put_object(Bucket=BUCKET, Key="results.txt",
-                       Body=pickle.dumps(results))
+
 --------------------------------------------------------------------------------------------------------------------------------------
 
 Additional resources
